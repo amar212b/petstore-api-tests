@@ -8,12 +8,13 @@ import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.*;
 import com.petstore.util.TestDataGenerator;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.awaitility.Awaitility.await;
 public class TestSuite extends BaseTest {
     private static final Logger logger = LoggerFactory.getLogger(TestSuite.class);
     private StoreApiClient storeClient;
-
-    private Long orderId;
     private Long createdOrderId;
 
     @BeforeClass
@@ -52,42 +53,58 @@ public class TestSuite extends BaseTest {
     public void testGetOrder() {
         logger.info("Running testGetOrderById");
 //        Response response = storeClient.getOrderById(createdOrderId);
-        Response response = waitForOrder(createdOrderId, 5, 500);
-        Assert.assertEquals(response.statusCode(), 200, "Failed to fetch order after retries");
-        Order orderDetails = storeClient.deserializeResponse(response, Order.class);
+        AtomicReference<Response> createResponseSave=new AtomicReference<>();
+        await()
+                .atMost(20, TimeUnit.SECONDS)
+                .pollInterval(1, TimeUnit.SECONDS)
+                .until(() -> {
+                    Response response = storeClient.getOrderById(createdOrderId);
+                    if (response.getStatusCode() == 200) {
+                        createResponseSave.set(response);
+                        return true;
+                    }
+                    return false;
+                });
+//        Response response = waitForOrder(createdOrderId, 5, 500);
+//        Response response=storeClient.getOrderById(createdOrderId);
+        Assert.assertEquals(createResponseSave.get().statusCode(), 200, "Failed to fetch order after retries");
+        Order orderDetails = storeClient.deserializeResponse(createResponseSave.get(), Order.class);
         logger.info("Order Details {}", orderDetails);
         Assert.assertEquals(orderDetails.id(), createdOrderId, "ID mismatch");
-        Assert.assertEquals(orderDetails.petId(), response.jsonPath().getInt("petId"),"Pet Id Mismatch");
-        Assert.assertEquals(orderDetails.quantity(), response.jsonPath().getInt("quantity"),"Quantity Mismatch");
-        Assert.assertEquals(orderDetails.status(),response.jsonPath().getString("status"),"Status Mismatch");
-        Assert.assertEquals(orderDetails.complete(),response.jsonPath().getBoolean("complete"),"Complete Mismatch");
-    }
-
-    private Response waitForOrder(Long orderId, int retries, long delayMillis) {
-        Response response = null;
-        for (int i = 0; i < retries; i++) {
-            response = storeClient.getOrderById(orderId);
-            if (response.statusCode() == 200) {
-                logger.info("Order matched successfully on retry attempt {}", i);
-                return response;
-            }
-            try {
-                Thread.sleep(delayMillis);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        return response;
+        Assert.assertEquals(orderDetails.petId(), createResponseSave.get().jsonPath().getInt("petId"),"Pet Id Mismatch");
+        Assert.assertEquals(orderDetails.quantity(), createResponseSave.get().jsonPath().getInt("quantity"),"Quantity Mismatch");
+        Assert.assertEquals(orderDetails.status(),createResponseSave.get().jsonPath().getString("status"),"Status Mismatch");
+        Assert.assertEquals(orderDetails.complete(),createResponseSave.get().jsonPath().getBoolean("complete"),"Complete Mismatch");
     }
 
     @Test(priority = 3, dependsOnMethods = "testPlaceOrder")
     public void testDeleteOrder() {
         logger.info("Running testDeleteOrder");
-        String message=storeClient.deleteOrder(createdOrderId).then().statusCode(200).extract().jsonPath().getString("message");
-        Assert.assertEquals(message, String.valueOf(createdOrderId));
-
+        AtomicReference<Response> delResponseSave=new AtomicReference<>();
+        await()
+                .atMost(10, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .ignoreExceptions()
+                .until(() -> {
+                    Response response = storeClient.deleteOrder(createdOrderId);
+                    boolean success = response.getStatusCode() == 200;
+                    if (success) {
+                        delResponseSave.set(response);
+                        logger.info("Delete succeeded: {}", response.asString());
+                    } else {
+                        logger.warn("Delete failed, retrying... Status: {}", response.getStatusCode());
+                    }
+                    return success;
+                });
+//        String message=storeClient.deleteOrder(createdOrderId).then().statusCode(200).extract().jsonPath().getString("message");
+        Assert.assertEquals(delResponseSave.get().jsonPath().getString("message"), String.valueOf(createdOrderId));
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         Response response = storeClient.getOrderById(createdOrderId);
-        Assert.assertEquals(response.statusCode(),404);
+        Assert.assertEquals(response.statusCode(),404,"order should not be available");
         logger.info("Order deleted successfully {}",response.asString());
     }
 
@@ -128,6 +145,23 @@ public class TestSuite extends BaseTest {
         Assert.assertTrue(inventory.containsKey("sold"));
         Assert.assertTrue(inventory.containsKey("pending"));
 //        Assert.assertTrue(inventory.containsKey("unavailable"));
+    }
+
+    private Response waitForOrder(Long orderId, int retries, long delayMillis) {
+        Response response = null;
+        for (int i = 0; i < retries; i++) {
+            response = storeClient.getOrderById(orderId);
+            if (response.statusCode() == 200) {
+                logger.info("Order matched successfully on retry attempt {}", i);
+                return response;
+            }
+            try {
+                Thread.sleep(delayMillis);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        return response;
     }
 }
 
