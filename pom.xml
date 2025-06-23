@@ -12,6 +12,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <env>dev</env> <!-- Default env -->
+        <testng.groups>${env}</testng.groups>
     </properties>
 
     <dependencies>
@@ -80,6 +82,7 @@
                 <suiteXmlFiles>
                     <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
                 </suiteXmlFiles>
+<!--                <groups>${testng.groups}</groups>-->
                 <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
             </configuration>
         </plugin>

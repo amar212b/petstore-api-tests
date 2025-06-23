@@ -18,10 +18,10 @@ public class TestSuite extends BaseTest {
     private Long createdOrderId;
 
     @BeforeClass
-    @Parameters("env")
     @Override
-    public void setup(String env) {
-        super.setup(env);
+    public void setup() {
+        String env = System.getProperty("env", "dev");
+        super.setupEnvironment(env);
         logger.info("Initializing StoreApiClient for tests");
         storeClient = new StoreApiClient();
     }
@@ -97,9 +97,9 @@ public class TestSuite extends BaseTest {
                     return success;
                 });
 //        String message=storeClient.deleteOrder(createdOrderId).then().statusCode(200).extract().jsonPath().getString("message");
-        Assert.assertEquals(delResponseSave.get().jsonPath().getString("message"), String.valueOf(createdOrderId));
+        Assert.assertEquals(delResponseSave.get().jsonPath().getString("message"), String.valueOf(createdOrderId),"");
         try {
-            Thread.sleep(2000);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
