@@ -35,4 +35,4 @@ jobs:
         if: always()
         with:
           name: extent-reports
-          path: target/reports/extent-report.html
+          path: target/extent-reports/extent-report.html
