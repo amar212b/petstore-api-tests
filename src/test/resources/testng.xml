@@ -1,8 +1,46 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
-<suite name="PetstoreTestSuite">
-    <test name="Tests">
-        <classes>
-            <class name="com.petstore.test.TestSuite"/>
-        </classes>
-    </test>
+
+<!--<suite name="PetstoreTestSuite" parallel="methods" thread-count="3">-->
+<!--    <listeners>-->
+<!--        <listener class-name="com.petstore.test.extent.ExtentReportListener"/>-->
+<!--    </listeners>-->
+<!--    <test name="Tests">-->
+<!--        <classes>-->
+<!--            <class name="com.petstore.test.testsuites.StoreTestSuite"/>-->
+<!--            <class name="com.petstore.test.testsuites.PetTestSuite"/>-->
+<!--        </classes>-->
+<!--    </test>-->
+<!--</suite>-->
+
+<!--<suite name="PetstoreTestSuite" parallel="tests" thread-count="4">-->
+<!--<listeners>-->
+<!--    <listener class-name="com.petstore.test.extent.ExtentReportListener"/>-->
+<!--</listeners>-->
+<!--<test name="StoreTests">-->
+<!--    <classes>-->
+<!--        <class name="com.petstore.test.testsuites.StoreTestSuite"/>-->
+<!--    </classes>-->
+<!--</test>-->
+<!--<test name="PetTests">-->
+<!--    <classes>-->
+<!--        <class name="com.petstore.test.testsuites.PetTestSuite"/>-->
+<!--    </classes>-->
+<!--</test>-->
+<!--</suite>-->
+
+
+<suite name="Petstore API Test Suite" parallel="tests" thread-count="2">
+<listeners>
+    <listener class-name="com.petstore.test.extent.ExtentReportListener"/>
+</listeners>
+<test name="Pet Tests" parallel="methods" thread-count="4">
+    <classes>
+        <class name="com.petstore.test.testsuites.PetTestSuite"/>
+    </classes>
+</test>
+<test name="Store Tests" parallel="methods" thread-count="4">
+    <classes>
+        <class name="com.petstore.test.testsuites.StoreTestSuite"/>
+    </classes>
+</test>
 </suite>

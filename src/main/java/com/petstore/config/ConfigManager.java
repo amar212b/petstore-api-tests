@@ -41,6 +41,10 @@ public class ConfigManager {
         return instance;
     }
 
+    public static synchronized void reset() {
+        instance = null;
+    }
+
     public String getBaseUrl() {
         return properties.getProperty("base.url");
     }
@@ -48,4 +52,8 @@ public class ConfigManager {
     public String getApiKey() {
         return properties.getProperty("api.key");
     }
+    public String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+
 }

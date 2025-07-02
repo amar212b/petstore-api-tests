@@ -3,6 +3,7 @@ package com.petstore.test;
 import io.restassured.RestAssured;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import com.petstore.config.ConfigManager;
 
@@ -25,6 +26,12 @@ public abstract class BaseTest {
         }
         RestAssured.baseURI = config.getBaseUrl();
         logger.info("Base URI set to: {}", RestAssured.baseURI);
+    }
+
+    @AfterClass
+    protected void tearDown() {
+        ConfigManager.reset();
+        logger.info("Reset ConfigManager");
     }
 }
 
