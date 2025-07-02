@@ -1,0 +1,28 @@
+version: 2.1
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/openjdk:16.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - maven-{{ checksum "pom.xml" }}
+            - maven-
+      - run:
+          name: Run Maven tests
+          command: mvn clean test -Denv=qa
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: maven-{{ checksum "pom.xml" }}
+      - store_artifacts:
+          path: target/extent-reports/extent-report.html
+          destination: extent-report.html
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build-and-test
